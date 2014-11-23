@@ -2,6 +2,8 @@ import SonatypeKeys._
 
 sonatypeSettings
 
+releaseSettings
+
 sbtPlugin := true
 
 scalaVersion := "2.10.4"
