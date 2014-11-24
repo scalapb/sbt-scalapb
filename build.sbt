@@ -16,11 +16,13 @@ name := "sbt-scalapb"
 
 addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.3.3")
 
+scalacOptions += "-target:jvm-1.7"
+
 ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
 // This is the version of the scalaPb compiler and runtime going to be used.
 // The version for the *plugin* is in versin.sbt.
-val scalaPbVersion = "0.3.2"
+val scalaPbVersion = "0.3.3"
 
 libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "compilerplugin" % scalaPbVersion
