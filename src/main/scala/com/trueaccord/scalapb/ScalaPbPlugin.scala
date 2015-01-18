@@ -19,6 +19,7 @@ object ScalaPbPlugin extends Plugin {
   val unpackDependencies = PB.unpackDependencies
   val protocOptions = PB.protocOptions
   val javaConversions = SettingKey[Boolean]("scalapb-java-conversions", "Generate Scala-Java protocol buffer conversions")
+  val flatPackage = SettingKey[Boolean]("scalapb-flat-package", "Do not generate a package for each file")
   val scalapbVersion =  SettingKey[String]("scalapb-version", "ScalaPB version.")
 
   val protobufConfig = PB.protobufConfig
@@ -30,6 +31,7 @@ object ScalaPbPlugin extends Plugin {
     scalaSource <<= (sourceManaged in Compile) { _ / "compiled_protobuf" },
 
     javaConversions := false,
+    flatPackage := false,
     scalapbVersion := com.trueaccord.scalapb.plugin.Version.scalaPbVersion,
     generatedTargets <<= (javaConversions in PB.protobufConfig,
       javaSource in PB.protobufConfig, scalaSource in PB.protobufConfig) {
@@ -42,11 +44,19 @@ object ScalaPbPlugin extends Plugin {
     },
     version := "2.6.1",
 
-    protocOptions <++= (generatedTargets in protobufConfig, javaConversions in protobufConfig) {
-      (generatedTargets, javaConversions) =>
+    protocOptions <++= (generatedTargets in protobufConfig,
+                        javaConversions in protobufConfig,
+                        flatPackage in protobufConfig) {
+      (generatedTargets, javaConversions, flatPackage) =>
+      def makeParams(params: (Boolean, String)*) = params
+        .collect {
+          case (true, paramName) => paramName
+        }.mkString(",")
       generatedTargets.find(_._2.endsWith(".scala")) match {
         case Some(targetForScala) =>
-          val params = if (javaConversions) "java_conversions" else ""
+          val params = makeParams(
+            javaConversions -> "java_conversions",
+            flatPackage -> "flat_package")
           Seq(s"--scala_out=$params:${targetForScala._1.absolutePath}")
         case None => Nil
       }
