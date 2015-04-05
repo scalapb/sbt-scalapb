@@ -5,6 +5,7 @@ package com.trueaccord.scalapb
 
 import java.io.File
 
+import com.trueaccord.scalapb.compiler.{PosixProtocDriver, WindowsProtocDriver, ProtocDriver}
 import sbt.Keys._
 import sbt._
 import sbtprotobuf.{ProtobufPlugin => PB}
@@ -21,10 +22,13 @@ object ScalaPbPlugin extends Plugin {
   val javaConversions = SettingKey[Boolean]("scalapb-java-conversions", "Generate Scala-Java protocol buffer conversions")
   val flatPackage = SettingKey[Boolean]("scalapb-flat-package", "Do not generate a package for each file")
   val scalapbVersion =  SettingKey[String]("scalapb-version", "ScalaPB version.")
+  val pythonExecutable =  SettingKey[String]("python-executable", "Full path for a Python.exe (needed only on Windows)")
 
   val protobufConfig = PB.protobufConfig
 
   val pbScalaGenerate = TaskKey[Seq[File]]("protobuf-scala-generate", "Compile the protobuf sources.")
+
+  val protocDriver = TaskKey[ProtocDriver]("scalapb-protoc-driver", "Protoc driver")
 
   val protobufSettings = PB.protobufSettings ++ inConfig(protobufConfig)(Seq[Setting[_]](
     pbScalaGenerate <<= sourceGeneratorTask.dependsOn(unpackDependencies),
@@ -33,6 +37,8 @@ object ScalaPbPlugin extends Plugin {
     javaConversions := false,
     flatPackage := false,
     scalapbVersion := com.trueaccord.scalapb.plugin.Version.scalaPbVersion,
+    pythonExecutable := "python",
+    protocDriver <<= protocDriverTask,
     generatedTargets <<= (javaConversions in PB.protobufConfig,
       javaSource in PB.protobufConfig, scalaSource in PB.protobufConfig) {
       (javaConversions, javaSource, scalaSource) =>
@@ -75,16 +81,21 @@ object ScalaPbPlugin extends Plugin {
       }
     })
 
-  private def executeProtoc(protocCommand: String, schemas: Set[File], includePaths: Seq[File], protocOptions: Seq[String], log: Logger) = try {
-    com.trueaccord.scalapb.compiler.Process.runProtocUsing(
+  private def executeProtoc(protocDriver: ProtocDriver, protocCommand: String, schemas: Set[File], includePaths: Seq[File], protocOptions: Seq[String], log: Logger) = try {
+    protocDriver.runProtocUsing(
       protocCommand, schemas.map(_.absolutePath).toSeq, includePaths.map(_.absolutePath), protocOptions)(
         l => Process(l.head, l.tail) ! log)
   } catch {
     case e: Exception =>
-      throw new RuntimeException("error occured while compiling protobuf files: %s" format (e.getMessage), e)
+      throw new RuntimeException("error occurred while compiling protobuf files: %s" format (e.getMessage), e)
   }
 
-  private def compile(protocCommand: String, schemas: Set[File], includePaths: Seq[File], protocOptions: Seq[String], generatedTargets: Seq[(File, String)], log: Logger) = {
+  private def compile(protocDriver: ProtocDriver,
+                      protocCommand: String,
+                      schemas: Set[File],
+                      includePaths: Seq[File],
+                      protocOptions: Seq[String],
+                      generatedTargets: Seq[(File, String)], log: Logger) = {
     val generatedTargetDirs = generatedTargets.map(_._1)
 
     generatedTargetDirs.foreach(_.mkdirs())
@@ -94,7 +105,7 @@ object ScalaPbPlugin extends Plugin {
     protocOptions.map("\t" + _).foreach(log.debug(_))
     schemas.foreach(schema => log.info("Compiling schema %s" format schema))
 
-    val exitCode = executeProtoc(protocCommand, schemas, includePaths, protocOptions, log)
+    val exitCode = executeProtoc(protocDriver, protocCommand, schemas, includePaths, protocOptions, log)
     if (exitCode != 0)
       sys.error("protoc returned exit code: %d" format exitCode)
 
@@ -106,12 +117,26 @@ object ScalaPbPlugin extends Plugin {
     (generatedTargets.flatMap { ot => (ot._1 ** ot._2).get}).toSet
   }
 
+  private def isWindows: Boolean = sys.props("os.name").startsWith("Windows")
+
+  private def protocDriverTask = (pythonExecutable in protobufConfig) map {
+    pythonExecutable =>
+      if (isWindows) new WindowsProtocDriver(pythonExecutable)
+      else new PosixProtocDriver
+  }
+
   private def sourceGeneratorTask =
-    (streams, sourceDirectories in protobufConfig, includePaths in protobufConfig, protocOptions in protobufConfig, generatedTargets in protobufConfig, protoc) map {
-      (out, srcDirs, includePaths, protocOpts, otherTargets, protocCommand) =>
+    (streams,
+      sourceDirectories in protobufConfig,
+      includePaths in protobufConfig,
+      protocOptions in protobufConfig,
+      generatedTargets in protobufConfig,
+      protocDriver in protobufConfig,
+      protoc) map {
+      (out, srcDirs, includePaths, protocOpts, otherTargets, protocDriver, protocCommand) =>
         val schemas = srcDirs.toSet[File].flatMap(srcDir => (srcDir ** "*.proto").get.map(_.getAbsoluteFile))
         val cachedCompile = FileFunction.cached(out.cacheDirectory / "protobuf", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
-          compile(protocCommand, schemas, includePaths, protocOpts, otherTargets, out.log)
+          compile(protocDriver, protocCommand, schemas, includePaths, protocOpts, otherTargets, out.log)
         }
         cachedCompile(schemas).toSeq
     }
