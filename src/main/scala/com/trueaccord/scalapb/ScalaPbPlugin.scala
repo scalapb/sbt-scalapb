@@ -42,7 +42,7 @@ object ScalaPbPlugin extends Plugin {
           else
             Nil)
     },
-    version := "2.6.1",
+    version := "3.0.0-alpha2",
 
     protocOptions <++= (generatedTargets in protobufConfig,
                         javaConversions in protobufConfig,
