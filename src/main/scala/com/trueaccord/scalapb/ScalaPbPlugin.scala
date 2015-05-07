@@ -14,6 +14,7 @@ object ScalaPbPlugin extends Plugin {
   // Set up aliases to SbtProtobuf tasks
   val includePaths = PB.includePaths
   val protoc = PB.protoc
+  val runProtoc = PB.runProtoc
   val externalIncludePath = PB.externalIncludePath
   val generatedTargets = PB.generatedTargets
   val generate = PB.generate
@@ -81,17 +82,17 @@ object ScalaPbPlugin extends Plugin {
       }
     })
 
-  private def executeProtoc(protocDriver: ProtocDriver, protocCommand: String, schemas: Set[File], includePaths: Seq[File], protocOptions: Seq[String], log: Logger) = try {
+  private def executeProtoc(protocDriver: ProtocDriver, protocCommand: Seq[String] => Int, schemas: Set[File], includePaths: Seq[File], protocOptions: Seq[String], log: Logger) = try {
     protocDriver.runProtocUsing(
-      protocCommand, schemas.map(_.absolutePath).toSeq, includePaths.map(_.absolutePath), protocOptions)(
-        l => Process(l.head, l.tail) ! log)
+      schemas.map(_.absolutePath).toSeq, includePaths.map(_.absolutePath), protocOptions)(
+        runner = protocCommand)
   } catch {
     case e: Exception =>
       throw new RuntimeException("error occurred while compiling protobuf files: %s" format (e.getMessage), e)
   }
 
   private def compile(protocDriver: ProtocDriver,
-                      protocCommand: String,
+                      protocCommand: Seq[String] => Int,
                       schemas: Set[File],
                       includePaths: Seq[File],
                       protocOptions: Seq[String],
@@ -132,11 +133,11 @@ object ScalaPbPlugin extends Plugin {
       protocOptions in protobufConfig,
       generatedTargets in protobufConfig,
       protocDriver in protobufConfig,
-      protoc) map {
-      (out, srcDirs, includePaths, protocOpts, otherTargets, protocDriver, protocCommand) =>
+      runProtoc) map {
+      (out, srcDirs, includePaths, protocOpts, otherTargets, protocDriver, runProtoc) =>
         val schemas = srcDirs.toSet[File].flatMap(srcDir => (srcDir ** "*.proto").get.map(_.getAbsoluteFile))
         val cachedCompile = FileFunction.cached(out.cacheDirectory / "protobuf", inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) { (in: Set[File]) =>
-          compile(protocDriver, protocCommand, schemas, includePaths, protocOpts, otherTargets, out.log)
+          compile(protocDriver, runProtoc, schemas, includePaths, protocOpts, otherTargets, out.log)
         }
         cachedCompile(schemas).toSeq
     }
