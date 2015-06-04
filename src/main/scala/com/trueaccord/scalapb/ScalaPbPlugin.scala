@@ -46,7 +46,7 @@ object ScalaPbPlugin extends Plugin {
           else
             Nil)
     },
-    version := "3.0.0-alpha-2",
+    version := "2.6.1",
     // Set protobuf's runProtoc runner with our runner..
     runProtoc <<= (protoc, streams) map ((cmd, s) => args => Process(cmd, args) ! s.log),
     PB.runProtoc := protocDriver.value.buildRunner((runProtoc in PB.protobufConfig).value),
