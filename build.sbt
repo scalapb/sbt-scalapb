@@ -2,8 +2,6 @@ import SonatypeKeys._
 
 sonatypeSettings
 
-releaseSettings
-
 sbtPlugin := true
 
 scalaVersion := "2.10.4"
@@ -16,7 +14,10 @@ name := "sbt-scalapb"
 
 addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.4.0")
 
-ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
+releasePublishArtifactsAction := {}
+
+releasePublishArtifactsAction <<= releasePublishArtifactsAction.dependsOn(
+  PgpKeys.publishSigned, publishLocal)
 
 // This is the version of the scalaPb compiler and runtime going to be used.
 // The version for the *plugin* is in version.sbt.
