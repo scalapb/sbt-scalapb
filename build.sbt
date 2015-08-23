@@ -20,7 +20,7 @@ ReleaseKeys.publishArtifactsAction := PgpKeys.publishSigned.value
 
 // This is the version of the scalaPb compiler and runtime going to be used.
 // The version for the *plugin* is in version.sbt.
-val scalaPbVersion = "0.4.16"
+val scalaPbVersion = "0.4.17"
 
 libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "compilerplugin" % scalaPbVersion
