@@ -21,7 +21,7 @@ releasePublishArtifactsAction <<= releasePublishArtifactsAction.dependsOn(
 
 // This is the version of the scalaPb compiler and runtime going to be used.
 // The version for the *plugin* is in version.sbt.
-val scalaPbVersion = "0.5.14"
+val scalaPbVersion = "0.5.15"
 
 libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "compilerplugin" % scalaPbVersion
