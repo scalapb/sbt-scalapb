@@ -22,6 +22,7 @@ object ScalaPbPlugin extends Plugin {
   val protocOptions = PB.protocOptions
   val javaConversions = SettingKey[Boolean]("scalapb-java-conversions", "Generate Scala-Java protocol buffer conversions")
   val flatPackage = SettingKey[Boolean]("scalapb-flat-package", "Do not generate a package for each file")
+  val grpc = SettingKey[Boolean]("scalapb-grpc", "Generate Grpc stubs for services")
   val scalapbVersion =  SettingKey[String]("scalapb-version", "ScalaPB version.")
   val pythonExecutable =  SettingKey[String]("python-executable", "Full path for a Python.exe (needed only on Windows)")
 
@@ -33,6 +34,7 @@ object ScalaPbPlugin extends Plugin {
     scalaSource <<= (sourceManaged in Compile) { _ / "compiled_protobuf" },
 
     javaConversions := false,
+    grpc := true,
     flatPackage := false,
     scalapbVersion := com.trueaccord.scalapb.plugin.Version.scalaPbVersion,
     pythonExecutable := "python",
@@ -52,8 +54,9 @@ object ScalaPbPlugin extends Plugin {
     PB.runProtoc := protocDriver.value.buildRunner((runProtoc in PB.protobufConfig).value),
     protocOptions <++= (generatedTargets in protobufConfig,
                         javaConversions in protobufConfig,
-                        flatPackage in protobufConfig) {
-      (generatedTargets, javaConversions, flatPackage) =>
+                        flatPackage in protobufConfig,
+                        grpc in protobufConfig) {
+      (generatedTargets, javaConversions, flatPackage, grpc) =>
       def makeParams(params: (Boolean, String)*) = params
         .collect {
           case (true, paramName) => paramName
@@ -62,7 +65,8 @@ object ScalaPbPlugin extends Plugin {
         case Some(targetForScala) =>
           val params = makeParams(
             javaConversions -> "java_conversions",
-            flatPackage -> "flat_package")
+            flatPackage -> "flat_package",
+            grpc -> "grpc")
           Seq(s"--scala_out=$params:${targetForScala._1.absolutePath}")
         case None => Nil
       }
