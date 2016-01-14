@@ -12,7 +12,7 @@ profileName := "com.trueaccord"
 
 name := "sbt-scalapb"
 
-addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.4.0")
+addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.5.0")
 
 releasePublishArtifactsAction := {}
 
