@@ -1,0 +1,7 @@
+> compile
+
+-$ exists target/scala-2.10/src_managed/main/compiled_protobuf/test/test1/Test1.scala
+-$ exists target/scala-2.10/classes/test/test1/Test1.class
+
+$ exists target/scala-2.10/src_managed/main/compiled_protobuf/test/test2/Test2.scala
+$ exists target/scala-2.10/classes/test/test2/Test2.class

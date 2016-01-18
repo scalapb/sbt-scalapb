@@ -70,3 +70,9 @@ sourceGenerators in Compile <+= (sourceManaged in Compile, version in Compile) m
   (sourceManaged, version) =>
     genVersionFile(sourceManaged, version)
 }
+
+ScriptedPlugin.scriptedSettings
+
+scriptedBufferLog := false
+
+scriptedLaunchOpts += s"-Dplugin.version=${version.value}"
