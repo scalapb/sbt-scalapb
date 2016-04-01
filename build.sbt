@@ -1,6 +1,4 @@
-import SonatypeKeys._
-
-sonatypeSettings
+import ReleaseTransformations._
 
 sbtPlugin := true
 
@@ -8,16 +6,26 @@ scalaVersion := "2.10.4"
 
 organization := "com.trueaccord.scalapb"
 
-profileName := "com.trueaccord"
-
 name := "sbt-scalapb"
 
 addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.5.1")
 
-releasePublishArtifactsAction := {}
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
-releasePublishArtifactsAction <<= releasePublishArtifactsAction.dependsOn(
-  PgpKeys.publishSigned, publishLocal)
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  ReleaseStep(action = Command.process("publishSigned", _), enableCrossBuild = true),
+  setNextVersion,
+  commitNextVersion,
+  ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true),
+  pushChanges
+)
 
 // This is the version of the scalaPb compiler and runtime going to be used.
 // The version for the *plugin* is in version.sbt.
@@ -26,28 +34,6 @@ val scalaPbVersion = "0.5.24"
 libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "compilerplugin" % scalaPbVersion
 )
-
-pomExtra in ThisBuild := {
-  <url>https://github.com/trueaccord/ScalaPB</url>
-  <licenses>
-    <license>
-      <name>Apache 2</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-    </license>
-  </licenses>
-  <scm>
-    <connection>scm:git:github.com:trueaccord/ScalaPB.git</connection>
-    <developerConnection>scm:git:git@github.com:trueaccord/ScalaPB.git</developerConnection>
-    <url>github.com/trueaccord/ScalaPB</url>
-  </scm>
-  <developers>
-    <developer>
-      <id>thesamet</id>
-      <name>Nadav S. Samet</name>
-      <url>http://www.thesamet.com/</url>
-    </developer>
-  </developers>
-}
 
 def genVersionFile(out: File, pluginVersion: String): Seq[File] = {
   out.mkdirs()
