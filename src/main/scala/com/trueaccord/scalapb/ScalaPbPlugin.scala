@@ -23,6 +23,7 @@ object ScalaPbPlugin extends Plugin {
   val javaConversions = SettingKey[Boolean]("scalapb-java-conversions", "Generate Scala-Java protocol buffer conversions")
   val flatPackage = SettingKey[Boolean]("scalapb-flat-package", "Do not generate a package for each file")
   val grpc = SettingKey[Boolean]("scalapb-grpc", "Generate Grpc stubs for services")
+  val singleLineToString = SettingKey[Boolean]("scalapb-single-line-to-string", "Messages toString() method generates single line")
   val scalapbVersion =  SettingKey[String]("scalapb-version", "ScalaPB version.")
   val pythonExecutable =  SettingKey[String]("python-executable", "Full path for a Python.exe (needed only on Windows)")
 
@@ -36,6 +37,7 @@ object ScalaPbPlugin extends Plugin {
     javaConversions := false,
     grpc := true,
     flatPackage := false,
+    singleLineToString := false,
     scalapbVersion := com.trueaccord.scalapb.plugin.Version.scalaPbVersion,
     pythonExecutable := "python",
     protocDriver <<= protocDriverTask,
@@ -55,8 +57,9 @@ object ScalaPbPlugin extends Plugin {
     protocOptions <++= (generatedTargets in protobufConfig,
                         javaConversions in protobufConfig,
                         flatPackage in protobufConfig,
-                        grpc in protobufConfig) {
-      (generatedTargets, javaConversions, flatPackage, grpc) =>
+                        grpc in protobufConfig,
+                        singleLineToString in protobufConfig) {
+      (generatedTargets, javaConversions, flatPackage, grpc, singleLineToString) =>
       def makeParams(params: (Boolean, String)*) = params
         .collect {
           case (true, paramName) => paramName
@@ -66,7 +69,8 @@ object ScalaPbPlugin extends Plugin {
           val params = makeParams(
             javaConversions -> "java_conversions",
             flatPackage -> "flat_package",
-            grpc -> "grpc")
+            grpc -> "grpc",
+            singleLineToString -> "single_line_to_string")
           Seq(s"--scala_out=$params:${targetForScala._1.absolutePath}")
         case None => Nil
       }

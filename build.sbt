@@ -29,7 +29,7 @@ releaseProcess := Seq[ReleaseStep](
 
 // This is the version of the scalaPb compiler and runtime going to be used.
 // The version for the *plugin* is in version.sbt.
-val scalaPbVersion = "0.5.24"
+val scalaPbVersion = "0.5.25"
 
 libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "compilerplugin" % scalaPbVersion
