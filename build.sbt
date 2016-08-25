@@ -8,7 +8,7 @@ organization := "com.trueaccord.scalapb"
 
 name := "sbt-scalapb"
 
-addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.5.2")
+addSbtPlugin("com.github.gseitz" % "sbt-protobuf" % "0.5.3")
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
