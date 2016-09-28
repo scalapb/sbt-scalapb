@@ -10,6 +10,7 @@ import sbt.Keys._
 import sbt._
 import sbtprotobuf.{ProtobufPlugin => PB}
 
+@deprecated("Please switch to sbt-protoc: http://trueaccord.github.io/ScalaPB/migrating.html", "0.5.43")
 object ScalaPbPlugin extends Plugin {
   // Set up aliases to SbtProtobuf tasks
   val includePaths = PB.includePaths
